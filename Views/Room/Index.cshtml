@@ -1,0 +1,229 @@
+﻿@model HotelManagement.ViewModel.RoomViewModel
+
+@{
+    ViewBag.Title = "Index";
+}
+<script src="~/Scripts/jquery-3.3.1.js"></script>
+
+<div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            loadRoomDetails();
+            $("#hdnRoomId").val("0");
+
+            $("#btnSave").click(function (e) {
+                e.preventDefault();
+                debugger;
+                SaveRoomData();
+
+            })
+        })
+
+        function SaveRoomData() {
+            var formData = new FormData();
+            formData.append("RoomId", $("#hdnRoomId").val());
+
+            formData.append("RoomNumber", $("#txtRoomNumber").val());
+            formData.append("RoomPrice", $("#txtRoomPrice").val());
+            formData.append("BookingStatusId", $("#BookingStatusId").val());
+            formData.append("RoomTypeId", $("#RoomTypeId").val());
+
+            formData.append("RoomCapacity", $("#txtRoomCapacity").val());
+            formData.append("RoomDescription", $("#txtRoomDescription").val());
+            formData.append("image", $("#UploadImage").get(0).files[0]);
+
+            for (var pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            $.ajax({
+                async: true,
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                cache: false,
+                url: "/Room/Index",
+                success: function (data) {
+                    if (data.success === true) {
+                        alert(data.message);
+                        ResetRoomForm();
+                        loadRoomDetails();
+                    }
+                },
+                error: function (request, error) {
+                    alert("AJAX Call Error: " + error);
+                }
+            });
+        }
+
+        function DisplayImage(result) {
+            if (result.files && result.files[0]) {
+                var filereader = new FileReader;
+                filereader.onload = function (e) {
+                    $("#imgroom").attr("src", e.target.result);
+                }
+                filereader.readAsDataURL(result.files[0]);
+            }
+        }
+
+        function ResetRoomForm() {
+            $("#txtRoomNumber").val('');
+            $("#txtRoomPrice").val('');
+            $("#BookingStatusId").val(1);
+            $("#RoomTypeId").val(1);
+            $("#txtRoomCapacity").val('');
+            $("#txtRoomDescription").val('');
+            $("#UploadImage").val('');
+            $("#txtRoomNumber").focus();
+            $("#imgroom").removeAttr("src");
+            $("#btnSave").text("Save");
+            $("#hdnRoomId").val(0);
+
+
+        } 
+
+        function loadRoomDetails() {
+            $.ajax({
+                async: true,
+                dataType: "HTML",
+                contentType: false,
+                processData: false,
+                url: "/Room/GetAllRoomDetails",
+
+                success: function (data) {
+                    $("#RoomlList").html(data);
+                },
+                error: function (request, error) {
+                    alert("AJAX Call Error: " + error);
+                }
+            });
+        }
+
+        function DeleteRoom(id) {
+            confirm("Are You Sure want to delete ?");
+            $.ajax({
+                async: true,
+                type: "GET",
+                dataType: "json",
+                contentType: 'application/json;charset=utf-8',
+                data: { RoomId: id },
+                url: "/Room/DeleteRooms",
+
+                success: function (data) {
+                    if (data.success === true) {
+                        alert(data.message);
+                        loadRoomDetails();
+                    }
+                },
+                error: function (request, error) {
+                    alert("AJAX Call Error: " + error);
+                }
+
+            });
+        }
+
+        function EditRoom(id) {
+            $.ajax({
+                async: true,
+                type: "GET",
+                dataType: "json",
+                contentType: 'application/json;charset=utf-8',
+                data: { RoomId: id },
+                url: "/Room/EditRoom",
+
+                success: function (data) {
+                    console.log(data)
+                    $("#hdnRoomId").val(data.RoomId);
+                    $("#txtRoomNumber").val(data.RoomNumber);
+                    $("#txtRoomPrice").val(data.RoomPrice);
+                    $("#BookingStatusId").val(data.BookingStatusId);
+                    $("#RoomTypeId").val(data.RoomTypeId);
+                    $("#txtRoomCapacity").val(data.RoomCapacity);
+                    $("#txtRoomDescription").val(data.RoomDescription);
+                    $("#imgroom").attr("src", "../Images/RoomImages/" + data.RoomImage);
+                    $('#myModal').modal('show');
+                    $("#btnSave").text("Update");
+
+                },
+                error: function (request, error) {
+                    alert("AJAX Call Error: " + error);
+                }
+
+            });
+        }
+    </script>
+</div>
+
+<div style="margin-top:20px">
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">Open Modal</button>
+</div>
+
+<!-- Modal -->
+<div id="myModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Room</h4>
+            </div>
+            <div class="modal-body">
+
+                <div class="container">
+                    <form id="buildingBlockForm">
+                        @Html.HiddenFor(expression:model=>model.RoomId,htmlAttributes:new { @class= "form-control", @id= "hdnRoomId" })
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.RoomNumber, htmlAttributes: new { @class = "control-label col-md-2" })
+                            @Html.EditorFor(model => model.RoomNumber, new { htmlAttributes = new { @class = "form-control", @id = "txtRoomNumber" } })
+                        </div>
+
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.RoomPrice, htmlAttributes: new { @class = "control-label col-md-2" })
+                            @Html.EditorFor(model => model.RoomPrice, new { htmlAttributes = new { @class = "form-control", @id = "txtRoomPrice" } })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.BookingStatusId, htmlAttributes: new { @class = "control-label col-md-2" })
+                            @Html.DropDownListFor(model => model.BookingStatusId, @Model.ListOfBokingStatus, new { htmlAttributes = new { @class = "form-control", @id = "ddBookingStatusId" } })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.RoomTypeId, htmlAttributes: new { @class = "control-label col-md-2" })
+                            @Html.DropDownListFor(model => model.RoomTypeId, @Model.ListOfRoomType, new { htmlAttributes = new { @class = "form-control", @id = "ddRoomTypeId" } })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.RoomCapacity, htmlAttributes: new { @class = "control-label col-md-2" })
+                            @Html.EditorFor(model => model.RoomCapacity, new { htmlAttributes = new { @class = "form-control", @id = "txtRoomCapacity" } })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.RoomDescription, htmlAttributes: new { @class = "control-label col-md-2" })
+                            @Html.EditorFor(model => model.RoomDescription, new { htmlAttributes = new { @class = "form-control", @id = "txtRoomDescription" } })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.RoomImage, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <input type="file" id="UploadImage" class="form-control" name="RoomImage" title="Load Image" onchange="DisplayImage(this)" />
+                            <img id="imgroom" height="150" width="150" style="border:solid" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnSave" class="btn btn-danger">Save</button>
+                <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div style="margin-top:10px">
+    <div id="RoomlList">
+    </div>
+</div>
